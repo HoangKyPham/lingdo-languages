@@ -1,9 +1,10 @@
 import Header from '@/app/(main)/learn/header'
 import Unit from '@/app/(main)/learn/unit'
 import FeedWrapper from '@/components/feed-wrapper'
+import Promo from '@/components/promo'
 import StickyWrapper from '@/components/sticky-wrapper'
 import UserProgess from '@/components/user-progress'
-import { getCourseProgress, getLessonPercentage, getUnits, getUserProgress } from '@/db/queries'
+import { getCourseProgress, getLessonPercentage, getUnits, getUserProgress, getUserSubscription } from '@/db/queries'
 import { lessons, units as unitsSchema } from '@/db/schema'
 import { redirect } from 'next/navigation'
 import React from 'react'
@@ -13,18 +14,20 @@ const LearnPage = async () => {
   const unitsData: any = getUnits()
   const courseProgressData: any = getCourseProgress()
   const lessonPercentageData: any = getLessonPercentage()
-
+  const userSubsccriptionData = getUserSubscription()
 
   const [
     userProgress,
     units,
     courseProgress,
-    lessonPercentage
+    lessonPercentage,
+    userSubscription
   ] = await Promise.all([
     userProgressData,
     unitsData,
     courseProgressData,
-    lessonPercentageData
+    lessonPercentageData,
+    userSubsccriptionData
   ]);
 
   if (!userProgress || !userProgress.activeCourse) {
@@ -38,7 +41,8 @@ const LearnPage = async () => {
   return (
     <div className='flex flex-row-reverse gap-[48px] px-6'>
       <StickyWrapper>
-        <UserProgess activeCourse={userProgress.activeCourse} hearts={userProgress.hearts} points={userProgress.points} hasActiveSubscription={false} />
+        <UserProgess activeCourse={userProgress.activeCourse} hearts={userProgress.hearts} points={userProgress.points} hasActiveSubscription={!!userSubscription?.isActive} />
+        <Promo />
       </StickyWrapper>
       <FeedWrapper>
         <Header title={userProgress.activeCourse.title} />

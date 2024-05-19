@@ -8,12 +8,15 @@ import Footer from '@/app/lesson/footer';
 import Header from '@/app/lesson/header';
 import QuestionBubble from '@/app/lesson/question-bubble';
 import ResultCard from '@/app/lesson/result-card';
-import { challengeOptions, challenges } from '@/db/schema';
+import { challengeOptions, challenges, userSubscription } from '@/db/schema';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useTransition } from 'react'
-import { useAudio, useWindowSize } from 'react-use';
+import { useAudio, useMount, useWindowSize } from 'react-use';
 import { toast } from 'sonner';
+import { useHeartsModal } from '@/store/use-hearts-modal';
+import { open } from 'fs/promises';
+import { usePracticeModal } from '@/store/use-practice-modal';
 
 type Props = {
     initialPercentage: number;
@@ -23,8 +26,10 @@ type Props = {
         completed: boolean;
         challengeOptions: typeof challengeOptions.$inferSelect[]
     })[];
-    userSubscription: any
-}
+    userSubscription: typeof userSubscription.$inferSelect & {
+        isActive: boolean;
+    } | null ;
+};
 
 const Quiz = ({
     initialPercentage,
@@ -33,6 +38,16 @@ const Quiz = ({
     initialLessonId,
     userSubscription
 }: Props) => {
+    const {open : openHeartsModal} = useHeartsModal()
+    const {open : openPracticeModal} = usePracticeModal()
+
+    useMount(() => {
+        if (initialPercentage === 100) {
+            openPracticeModal();
+        }
+    })
+
+
     const {width, height} = useWindowSize();
     const router = useRouter();
 
@@ -51,7 +66,9 @@ const Quiz = ({
     const [pending, startTransition] = useTransition();
     const [lessonId] = useState(initialLessonId)
     const [hearts, setHearts] = useState(initialHearts);
-    const [percentage, setPercentage] = useState(initialPercentage);
+    const [percentage, setPercentage] = useState(() => {
+        return initialPercentage === 100 ? 0 : initialPercentage;
+    });
     const [challenges] = useState(initialLessonChallenges);
     const [activeIndex, setActiveIndex] = useState(() => {
         const uncompletedIndex = challenges.findIndex((challenge) => !challenge.completed);
@@ -99,7 +116,7 @@ const Quiz = ({
                 upsertChallengeProgress(challenge.id)
                     .then((response) => {
                         if (response?.error === "hearts") {
-                            console.error("Missing hearts");
+                            openHeartsModal()
                             return
                         }
 
@@ -118,7 +135,7 @@ const Quiz = ({
                 reduceHearts(challenge.id)
                     .then((respone) => {
                         if (respone?.error === "hearts") {
-                            console.error("missing hearts");
+                            openHeartsModal()
                             return;
                         }
 

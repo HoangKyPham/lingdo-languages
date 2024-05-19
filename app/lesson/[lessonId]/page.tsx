@@ -3,12 +3,17 @@ import { getLesson, getUserProgress, getUserSubscription } from '@/db/queries'
 import { redirect } from 'next/navigation';
 import React from 'react'
 
+type Props = {
+  params : {
+    lessonId : number
+  }
+}
 
-const LessonPage = async () => {
-    const lessonData = getLesson();
+
+const LessonIdPage = async ({params} : Props) => {
+    const lessonData = getLesson(params.lessonId);
     const userProgressData = getUserProgress();
-  const userSubsccriptionData = getUserSubscription()
-
+    const userSubsccriptionData = getUserSubscription();
 
     const [lesson, userProgress, userSubsccription] = await Promise.all([lessonData, userProgressData, userSubsccriptionData])
 
@@ -32,4 +37,4 @@ const LessonPage = async () => {
   )
 }
 
-export default LessonPage
+export default LessonIdPage
