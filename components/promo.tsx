@@ -1,6 +1,7 @@
-"use client"
 
+import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import Link from 'next/link'
 import React from 'react'
 
 const Promo = () => {
@@ -20,6 +21,16 @@ const Promo = () => {
                 </div>
                 <p className='text-muted-foreground'>Get unlimited hearts and more!</p>
             </div>
+            <Button
+                asChild
+                variant="super"
+                className='w-full'
+                size="lg"
+            >
+                <Link href="/shop">
+                    Upgrade today
+                </Link>
+            </Button>
         </div>
     )
 }

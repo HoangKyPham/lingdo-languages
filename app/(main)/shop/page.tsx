@@ -1,5 +1,7 @@
 import Items from '@/app/(main)/shop/items';
 import FeedWrapper from '@/components/feed-wrapper';
+import Promo from '@/components/promo';
+import Quests from '@/components/quest';
 import StickyWrapper from '@/components/sticky-wrapper';
 import UserProgess from '@/components/user-progress';
 import { getUserProgress, getUserSubscription } from '@/db/queries'
@@ -36,9 +38,13 @@ const ShopPage = async () => {
                     points={userProgress.points}
                     hasActiveSubscription={isPro}
                 />
+                {!isPro && (
+                    <Promo />
+                )}
+                <Quests points={userProgress.points} />
             </StickyWrapper>
             <FeedWrapper>
-               <div className="w-full flex flex-col items-center">
+                <div className="w-full flex flex-col items-center">
                     <Image
                         src="/shop.svg"
                         alt='Shop'
@@ -52,7 +58,7 @@ const ShopPage = async () => {
                         points={userProgress.points}
                         hasActiveSubscriptions={isPro}
                     />
-                </div> 
+                </div>
             </FeedWrapper>
         </div>
     )
