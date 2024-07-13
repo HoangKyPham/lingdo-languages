@@ -14,7 +14,6 @@ type Props = {
     hasActiveSubscriptions : boolean;
 }
 
-
 const Items = ({
     hearts,
     points,
@@ -79,7 +78,7 @@ const Items = ({
                 }
             </Button>
         </div>
-        {/* <div className="flex items-center w-full p-4 pt-8 gap-x-4 border-t-2">
+        <div className="flex items-center w-full p-4 pt-8 gap-x-4 border-t-2">
                 <Image
                     src="unlimited.svg"
                     alt='Unlimited'
@@ -97,7 +96,7 @@ const Items = ({
                 >
                     {hasActiveSubscriptions ? "active" : "upgrade"}
                 </Button>
-        </div>  chua add duoc stripe*/}
+        </div>
     </ul>
   )
 }

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { courses } from '@/db/schema';
+import { courses } from '@/db/interfaces';
 import { InfinityIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ type Props = {
 }
 
 const UserProgess = ({activeCourse, hearts, points, hasActiveSubscription}: Props) => {
+
   return (
     <div className="flex items-center justify-between gap-x-2 w-full">
         <Link href="/courses">

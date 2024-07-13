@@ -16,7 +16,7 @@ export const HeartsModal = () => {
 
     const onClick = () => {
         close()
-        router.push("/store")
+        router.push("/shop")
     }
 
     if (!isClient) {
@@ -29,7 +29,7 @@ export const HeartsModal = () => {
                     <DialogHeader>
                         <div className="flex items-center w-full justify-center mb-5">
                         <Image
-                            src="/pepe-bad.svg"
+                            src="/pepe-sad.svg"
                             alt="sad"
                             height={80}
                             width={80}

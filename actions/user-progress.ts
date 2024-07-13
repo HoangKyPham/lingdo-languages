@@ -1,17 +1,14 @@
 "use server"
 
 import { POINTS_TO_REFILL } from "@/constants";
-import db from "@/db/drizzle";
 import { getCoursesById, getUserProgress, getUserSubscription } from "@/db/queries";
-import { challengeProgress, challenges, userProgress } from "@/db/schema";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 
 
-export const upsertUserProgress = async (courseId: number) => {
+export const upsertUserProgress = async (courseId: string) => {
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -25,38 +22,54 @@ export const upsertUserProgress = async (courseId: number) => {
         throw new Error("Course not found");
     };
 
-
-    if(!course.units.length || !course.units[0].lessons.length){
-        throw new Error("Course is empty")
-    }
-
     const existingUserProgress = await getUserProgress();
 
-    if (existingUserProgress) {
-        await db.update(userProgress).set({
-            activeCourseId: courseId,
-            userName: user.firstName || "User",
-            userImageSrc: user.imageUrl || "/avatar.svg"
+    if (existingUserProgress.data) {
+
+        const response = await fetch(`http://localhost:8080/api/v1/update-user-progress`, {
+            method: "PATCH",
+            headers: {
+                "Content-type": "application/json"
+            },
+            body: JSON.stringify({
+                emailAddress: user?.emailAddresses[0].emailAddress,
+                activeCourseId: courseId,
+                userName: user.firstName || "User",
+                userImageSrc: user.imageUrl || "/avatar.svg"
+            })
         })
+
+
         revalidatePath("/courses")
         revalidatePath("/learn")
         redirect("/learn")
     }
 
-    await db.insert(userProgress).values({
-        userId,
-        activeCourseId: courseId,
-        userName: user.firstName || "User",
-        userImageSrc: user.imageUrl || "/avatar.svg"
-    })
+
+
+    const response = await fetch(`http://localhost:8080/api/v1/insert-user-progress`, {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({
+            email: user?.emailAddresses[0].emailAddress,
+            activeCourse: courseId,
+            userName: user.firstName || "User",
+            userImageSrc: user.imageUrl || "/avatar.svg"
+        })
+    })  
 
     revalidatePath("/courses")
     revalidatePath("/learn")
     redirect("/learn")
 }
 
-export const reduceHearts = async (challengeId : number) => {
-    const {userId} = await auth();
+export const reduceHearts = async (challengeId: string) => {
+
+    const { userId } = await auth();
+    const user = await currentUser();
+    const emailAddress = user?.emailAddresses[0].emailAddress
 
     if (!userId) {
         throw new Error("Unauthorized")
@@ -66,9 +79,16 @@ export const reduceHearts = async (challengeId : number) => {
     const userSubscription = await getUserSubscription();
 
 
-    const challenge = await db.query.challenges.findFirst({
-        where: eq(challenges.id, challengeId)
+    const responseChallenge = await fetch(`http://localhost:8080/api/v1/get-challenge-by-id`, {
+        method: "POST",
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: JSON.stringify({ challengeId })
+
     })
+
+    const challenge = await responseChallenge.json();
 
     if (!challenge) {
         throw new Error("Challenge not found")
@@ -76,34 +96,45 @@ export const reduceHearts = async (challengeId : number) => {
 
     const lessonId = challenge.lessonId
 
-    const existingChallengeProgress = await db.query.challengeProgress.findFirst({
-        where: and(
-            eq(challengeProgress.userId, userId),
-            eq(challengeProgress.challengeId, challengeId),
-        )
-    });
 
-    const isPractice = !!existingChallengeProgress
+    const responseExChallengeProgress = await fetch(`http://localhost:8080/api/v1/ex-challenge-progress`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ challengeId, emailAddress })
+    })
 
-    if(isPractice){
-        return {error : "practice"}
+    const existingChallengeProgress = await responseExChallengeProgress.json();
+
+    const isPractice = !!existingChallengeProgress.challengeProgress
+
+
+    if (isPractice) {
+        return { error: "practice" }
     }
 
-    if(!currentUserProgress){
+    if (!currentUserProgress.user) {
         throw new Error("User progress not found")
     }
 
     if (userSubscription?.isActive) {
-        return {error : "subscription"}
+        return { error: "subscription" }
     }
 
-    if(currentUserProgress.hearts === 0){
-        return {error : "hearts"}
+    if (currentUserProgress.user.hearts === 0) {
+        return { error: "hearts" }
     }
 
-    await db.update(userProgress).set({
-        hearts : Math.max(currentUserProgress.hearts - 1, 0),
-    }).where(eq(userProgress.userId, userId))
+    const response = await fetch(`http://localhost:8080/api/v1/update-user-progress`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ emailAddress, hearts: Math.max(currentUserProgress.user.hearts - 1, 0) })
+    })
+
+  
 
     revalidatePath("/shop")
     revalidatePath("/learn")
@@ -116,22 +147,27 @@ export const reduceHearts = async (challengeId : number) => {
 export const refillHearts = async () => {
     const currentUserProgress = await getUserProgress();
 
-    if(!currentUserProgress){
+
+    if (!currentUserProgress.user) {
         throw new Error("User progress not found")
     }
 
-    if (currentUserProgress.hearts === 5) {
+    if (currentUserProgress.user.hearts === 5) {
         throw new Error("Hearts are already full")
     }
 
-    if(currentUserProgress.points < POINTS_TO_REFILL){
+    if (currentUserProgress.user.points < POINTS_TO_REFILL) {
         throw new Error("Not enough points")
     }
 
-    await db.update(userProgress).set({
-        hearts : 5,
-        points : currentUserProgress.points - POINTS_TO_REFILL,
-    }).where(eq(userProgress.userId, currentUserProgress.userId))
+     await fetch(`http://localhost:8080/api/v1/update-user-progress`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ emailAddress : currentUserProgress.user.email, hearts: 5 , points: currentUserProgress.user.points - POINTS_TO_REFILL })
+    })
+
 
     revalidatePath("/shop")
     revalidatePath("/learn")

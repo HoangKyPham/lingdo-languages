@@ -26,6 +26,7 @@ const LessonButton = ({
     percentage
 
 }: Props) => {
+
     const cycleLength = 8;
     const cycleIndex = index % cycleLength;
 

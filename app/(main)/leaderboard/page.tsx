@@ -5,6 +5,7 @@ import StickyWrapper from '@/components/sticky-wrapper';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import UserProgess from '@/components/user-progress';
+import { UserProgress } from '@/db/interfaces';
 import { getTopTenUsers, getUserProgress, getUserSubscription } from '@/db/queries'
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
@@ -27,9 +28,14 @@ const LeaderboardPage = async () => {
         leaderboardData
     ])
 
-    if (!userProgress || !userProgress.activeCourse) {
+    console.log(userProgress)
+    console.log(leaderboard)
+
+    if (!userProgress.user || !userProgress.user.activeCourse) {
         redirect("/courses")
     }
+
+    
 
     const isPro = !!userSubscription?.isActive
 
@@ -37,15 +43,15 @@ const LeaderboardPage = async () => {
         <div className="flex flex-row-reverse gap-[48px] px-6">
             <StickyWrapper>
                 <UserProgess
-                    activeCourse={userProgress.activeCourse}
-                    hearts={userProgress.hearts}
+                    activeCourse={userProgress.user.activeCourse}
+                    hearts={userProgress.user.hearts}
                     points={userProgress.points}
                     hasActiveSubscription={isPro}
                 />
                 {!isPro && (
                     <Promo />
                 )}
-                <Quests points={userProgress.points} />
+                <Quests points={userProgress.user.points} />
 
             </StickyWrapper>
             <FeedWrapper>
@@ -59,9 +65,9 @@ const LeaderboardPage = async () => {
                     <h1 className='text-center font-bold text-neutral-500 text-2xl my-6' >Leaderboard</h1>
                     <p className='text-muted-foreground text-center text-lg mb-6'>See where you stand among other learners in the community</p>
                     <Separator />
-                    {leaderboard.map((userProgress, index) => (
+                    {leaderboard.map((userProgress : UserProgress, index : number) => (
                         <div
-                            key={userProgress.userId}
+                            key={userProgress.email}
                             className='flex items-center w-full p-2 px-4 rounded-xl hover:bg-gray-200/50'
                         >
                             <p className='font-bold text-lime-700 mr-4'>{index + 1}</p>

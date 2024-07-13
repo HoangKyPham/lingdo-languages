@@ -13,7 +13,7 @@ const CoursesPage = async () => {
         <h1 className="text-2xl font-bold text-neutral-700">
             Language Courses
         </h1>
-        <List courses = {courses} activeCourseId={userProgress?.activeCourseId}/>
+        <List courses = {courses.courses} activeCourse={userProgress.user?.activeCourse}/>
     </div>
   )
 }

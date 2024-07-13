@@ -1,73 +1,72 @@
-import db from "@/db/drizzle";
-import { challengeOptions, challengeProgress, challenges, courses, lessons, units, userProgress, userSubscription } from "@/db/schema";
-import { auth, getAuth } from "@clerk/nextjs/server";
-import { equal } from "assert";
-import { channel } from "diagnostics_channel";
-import { eq } from "drizzle-orm";
+import { Challenge, ChallengeProgress, Lesson, Unit } from "@/db/interfaces";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { cache } from "react";
 
 
+// call Api
+
 export const getUserProgress = cache(async () => {
-    const { userId } = await auth()
-
-    if (!userId) {
-        return null
-    }
-
-    const data = await db.query.userProgress.findFirst({
-        where: eq(userProgress.userId, userId),
-        with: {
-            activeCourse: true
+    try {
+        const user = await currentUser();
+        const emailAddress = user?.emailAddresses[0].emailAddress
+        if (!emailAddress) {
+            return null
         }
-    });
 
-    return data
+        const response = await fetch(`http://localhost:8080/api/v1/get-user-progress`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ emailAddress })
+        })
+
+        const data = await response.json();
+
+
+        return data
+    } catch (error) {
+        return error
+    }
 })
+
+// unit
 
 export const getUnits = cache(async () => {
     try {
         const { userId } = await auth();
         const userProgress = await getUserProgress();
 
-        if (!userId || !userProgress?.activeCourseId) {
+
+
+        if (!userId || !userProgress.user?.activeCourse._id) {
             return [];
         }
 
-        const data = await db.query.units.findMany({
-            orderBy: (units, { asc }) => [asc(units.order)],
-            where: eq(units.courseId, userProgress.activeCourseId),
-            with: {
-                lessons: {
-                    orderBy: (lessons, { asc }) => [asc(lessons.order)],
-                    with: {
-                        challenges: {
-                            orderBy: (challenges, { asc }) => [asc(challenges.order)],
-                            with: {
-                                challengeProgress: {
-                                    where: eq(
-                                        challengeProgress.userId,
-                                        userId
-                                    )
-                                }
-                            }
-                        }
 
-                    }
-                }
-            }
+        const activeCourseId = userProgress.user.activeCourse._id
+
+        const response = await fetch(`http://localhost:8080/api/v1/get-units`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ activeCourseId })
         })
 
+        const data = await response.json();
 
-        const normalizedData = data.map((unit) => {
-            const lessonWithCompletedStatus = unit.lessons.map((lesson) => {
-                if (lesson.challenges.length === 0) {
+        const normalizedData = data.result.map((unit : Unit) => {
+            const lessonWithCompletedStatus = unit.lessons?.map((lesson : Lesson) => {
+
+                if (lesson.challenges?.length === 0) {
                     return { ...lesson, completed: false }
                 }
-                const allCompletedChallenges = lesson.challenges.every((challenge) => {
+                const allCompletedChallenges = lesson.challenges?.every((challenge : Challenge) => {
 
-                    return challenge.challengeProgress
-                        && challenge.challengeProgress.length > 0
-                        && challenge.challengeProgress.every((progress) => progress.completed)
+                    return challenge.challengeProgresses
+                        && challenge.challengeProgresses.length > 0
+                        && challenge.challengeProgresses.filter((progress) => progress.completed === true)
                 })
 
                 return { ...lesson, completed: allCompletedChallenges }
@@ -83,140 +82,163 @@ export const getUnits = cache(async () => {
 
 })
 
-export const getCourses = cache(async () => {
-    const data = await db.query.courses.findMany();
+// course
 
-    return data
+export const getCourses = cache(async () => {
+
+    try {
+
+        const response = await fetch(`http://localhost:8080/api/v1/get-courses`, {
+            method: 'GET',
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+
+        const data = await response.json();
+
+        if (!data) {
+            return null
+        }
+
+        return data
+    } catch (error) {
+        return error
+    }
+
+
 })
 
-export const getCoursesById = cache(async (courseId: number) => {
-    const data = await db.query.courses.findFirst({
-        where: eq(courses.id, courseId),
-        with: {
-            units: {
-                orderBy: (units, { asc }) => [asc(units.order)],
-                with: {
-                    lessons: {
-                        orderBy: (lessons, { asc }) => [asc(lessons.order)],
-                    }
-                }
-            }
-        }
+export const getCoursesById = cache(async (courseId: string) => {
+
+    console.log(courseId)
+
+    const response = await fetch(`http://localhost:8080/api/v1/get-course-by-id`, {
+        method : 'POST',
+        headers : {
+            "Content-type" : "application/json"
+        },
+        body : JSON.stringify({courseId})
     })
 
+    const data = await response.json()
+
+    console.log(data)
+
     return data
 })
+
+
+// unit
 
 export const getCourseProgress = cache(async () => {
     const { userId } = await auth();
     const userProgress = await getUserProgress();
 
-    if (!userId || !userProgress?.activeCourseId) {
+
+    if (!userId || !userProgress.user?.activeCourse) {
         return null
     }
 
-    const unitsInActiveCourse = await db.query.units.findMany({
-        orderBy: (units, { asc }) => [asc(units.order)],
-        where: eq(units.courseId, userProgress.activeCourseId),
-        with: {
-            lessons: {
-                orderBy: (lessons, { asc }) => [asc(lessons.order)],
-                with: {
-                    unit: true,
-                    challenges: {
-                        with: {
-                            challengeProgress: {
-                                where: eq(challengeProgress.userId, userId)
-                            }
-                        }
-                    }
-                }
-            }
+    
+    const activeCourseId = userProgress.user?.activeCourse._id
 
-        }
+
+    const response = await fetch(`http://localhost:8080/api/v1/get-course-progress`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ activeCourseId, email: userProgress.user.email })
     })
 
-    const firstUncompletedLesson = unitsInActiveCourse
-        .flatMap((unit) => unit.lessons)
-        .find((lesson) => {
-            return lesson.challenges.some((challenge) => {
-                return !challenge.challengeProgress
-                    || challenge.challengeProgress.length === 0
-                    || challenge.challengeProgress.some((progress) => progress.completed === false)
+
+
+    const unitsInActiveCourse = await response.json();
+
+    const firstUncompletedLesson = unitsInActiveCourse.result
+        .flatMap((unit : Unit) => unit.lessons)
+        .find((lesson : Lesson) => {
+            return lesson.challenges?.some((challenge : Challenge) => {
+                return !challenge.challengeProgresses
+                    || challenge.challengeProgresses.length === 0
+                    || challenge.challengeProgresses.some((progress) =>  progress.completed === false)
             })
         })
 
     return {
         activeLesson: firstUncompletedLesson,
-        activeLessonId: firstUncompletedLesson?.id
+        activeLessonId: firstUncompletedLesson?._id
+
     }
 })
 
-export const getLesson = cache(async (id?: number) => {
-    const { userId } = await auth();
+// lesson
+export const getLesson = cache(async (id?: string) => {
+    const user = await currentUser();
+    const emailAddress = user?.emailAddresses[0].emailAddress
 
-    if (!userId) {
+    if (!emailAddress) {
         return null
     }
 
     const courseProgress = await getCourseProgress();
 
-    const lessonId = id || courseProgress?.activeLessonId;
+    const lessonId = id || courseProgress?.activeLesson._id;
 
     if (!lessonId) {
         return null
     }
 
-    const data = await db.query.lessons.findFirst({
-        where: eq(lessons.id, lessonId),
-        with: {
-            challenges: {
-                orderBy: (challenges, { asc }) => [asc(challenges.order)],
-                with: {
-                    challengeOptions: true,
-                    challengeProgress: {
-                        where: eq(challengeProgress.userId, userId)
-                    }
-                }
-            }
-        }
+
+    const response = await fetch(`http://localhost:8080/api/v1/get-lesson`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ lessonId, emailAddress })
     })
 
-    if (!data || !data.challenges) {
+    const data = await response.json()
+
+
+    if (!data || !data.lesson.challenges) {
         return null
     }
 
-    const normalizedChallenges = data.challenges.map(challenge => {
-        const completed = challenge.challengeProgress
-            && challenge.challengeProgress.length > 0
-            && challenge.challengeProgress.every(progress => progress.completed)
+
+    const normalizedChallenges = data.lesson.challenges.map((challenge : Challenge) => {
+        const completed = challenge.challengeProgresses
+            && challenge.challengeProgresses.length > 0
+            && challenge.challengeProgresses.every(progress => progress.completed)
 
         return { ...challenge, completed }
     })
-
     return { ...data, challenges: normalizedChallenges }
-
-
 })
 
 
 export const getLessonPercentage = cache(async () => {
     const courseProgress = await getCourseProgress();
 
-    if (!courseProgress?.activeLessonId) {
+
+    if (!courseProgress?.activeLesson._id) {
         return 0;
     }
 
-    const lesson = await getLesson(courseProgress.activeLessonId);
+    const { lesson } = await getLesson(courseProgress?.activeLesson._id);
 
     if (!lesson) {
         return 0;
     }
 
-    const completedChallenges = lesson.challenges.filter(challenge => challenge.completed)
+    const completedChallenges = lesson.challenges.filter((challenge : any) => challenge.challengeProgresses?.completed)
+
+
     const percentage = Math.round(
         (completedChallenges.length / lesson.challenges.length) * 100,
     )
+
 
     return percentage
 
@@ -224,50 +246,68 @@ export const getLessonPercentage = cache(async () => {
 
 const DAY_IN_MS = 86_400_000
 export const getUserSubscription = cache(async () => {
-    const { userId } = await auth();
 
-    if (!userId) {
-        return null;
-    }
 
-    const data = await db.query.userSubscription.findFirst({
-        where: eq(userSubscription.userId, userId)
-    })
+    try {
+        const user = await currentUser();
+        const emailAddress = user?.emailAddresses[0].emailAddress
 
-    if (!data) {
-        return null
-    }
 
-    const isActive = data.stripePriceId && data.stripeCurrentPeriodEnd?.getTime()! + DAY_IN_MS > Date.now()
+        if (!emailAddress) {
+            return null;
+        }
 
-    return {
-        ...data,
-        isActive: !!isActive,
+
+        const respone = await fetch(`http://localhost:8080/api/v1/get-user-subsctiption`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ emailAddress })
+        })
+
+        const data = await respone.json()
+
+        if (!data) {
+            return null
+        }
+
+        const isActive = data.vnPayPriceId && data.vnPayCurrentPeriodEnd?.getTime()! + DAY_IN_MS > Date.now()
+
+        return {
+            ...data,
+            isActive: !!isActive,
+        }
+    } catch (error) {
+        return error
     }
 
 })
 
 export const getTopTenUsers = cache(async () => {
-    const {userId} = await auth();
+    const { userId } = await auth();
 
-    if (!userId) {
+    const user = await currentUser();
+    const emailAddress = user?.emailAddresses[0].emailAddress
+
+    if (!emailAddress) {
         return [];
     }
 
-    
-    const data = await db.query.userProgress.findMany({
-        orderBy: (userProgress, {desc}) => [desc(userProgress.points)],
-        limit: 10,
-        columns: {
-            userId: true,
-            userName: true,
-            userImageSrc: true,
-            points: true,
-        }
+
+    const respone = await fetch(`http://localhost:8080/api/v1/get-top-users`, {
+        method : "GET",
+        headers : {
+            "Content-Type": "application/json"
+        },
     })
+
+    const {data} = await respone.json()
+
+    console.log(data)
 
     return data
 
-}) 
+})
 
 

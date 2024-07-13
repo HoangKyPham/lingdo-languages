@@ -1,5 +1,5 @@
 import Card from '@/app/lesson/card';
-import { challengeOptions, challenges } from '@/db/schema'
+import { challengeOptions, challenges } from '@/db/interfaces'
 import { cn } from '@/lib/utils';
 import React from 'react'
 
@@ -20,6 +20,7 @@ const Challenge = ({
     disabled,
     type
 }: Props) => {
+    
     return (
         <div className={cn(
             "grid gap-2",
@@ -28,13 +29,13 @@ const Challenge = ({
         )}>
             {options.map((option, index) => (
                 <Card
-                    key={option.id}
-                    id={option.id}
+                    key={option._id}
+                    id={option._id}
                     text={option.text}
                     imageSrc={option.imageSrc}
                     shortcut={`${index + 1}`}
-                    selected={selectedOption === option.id}
-                    onClick={() => onSelect(option.id)}
+                    selected={selectedOption === option._id}
+                    onClick={() => onSelect(option._id)}
                     sttus={status}
                     audioSrc={option.audioSrc}
                     disabled={disabled}

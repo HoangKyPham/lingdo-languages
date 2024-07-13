@@ -8,7 +8,7 @@ import Footer from '@/app/lesson/footer';
 import Header from '@/app/lesson/header';
 import QuestionBubble from '@/app/lesson/question-bubble';
 import ResultCard from '@/app/lesson/result-card';
-import { challengeOptions, challenges, userSubscription } from '@/db/schema';
+import { challengeOptions, challenges, userSubscription } from '@/db/interfaces';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useTransition } from 'react'
@@ -47,7 +47,6 @@ const Quiz = ({
         }
     })
 
-
     const {width, height} = useWindowSize();
     const router = useRouter();
 
@@ -66,26 +65,31 @@ const Quiz = ({
     const [pending, startTransition] = useTransition();
     const [lessonId] = useState(initialLessonId)
     const [hearts, setHearts] = useState(initialHearts);
+
     const [percentage, setPercentage] = useState(() => {
         return initialPercentage === 100 ? 0 : initialPercentage;
     });
+    console.log(percentage);
     const [challenges] = useState(initialLessonChallenges);
     const [activeIndex, setActiveIndex] = useState(() => {
         const uncompletedIndex = challenges.findIndex((challenge) => !challenge.completed);
+
         return uncompletedIndex === -1 ? 0 : uncompletedIndex;
     })
 
-    const [selectedOption, setSelectedOption] = useState<number>()
+    const [selectedOption, setSelectedOption] = useState<string>()
     const [status, setStatus] = useState<"correct" | "wrong" | "none">("none")
 
     const challenge = challenges[activeIndex];
     const options = challenge?.challengeOptions ?? [];
 
+
     const onNext = () => {
         setActiveIndex((current) => current + 1)
     }
 
-    const onSelect = (id: number) => {
+    const onSelect = (id: string) => {
+        console.log(id);
         if (status !== "none") return
         setSelectedOption(id)
     }
@@ -109,12 +113,16 @@ const Quiz = ({
 
         if (!correctOption) {
             return
-        }
+        }   
 
-        if (correctOption.id === selectedOption) {
+        console.log(correctOption)
+
+        if (correctOption._id === selectedOption) {
             startTransition(() => {
-                upsertChallengeProgress(challenge.id)
+                console.log(challenge._id)
+                upsertChallengeProgress(challenge._id)
                     .then((response) => {
+                        console.log(response)
                         if (response?.error === "hearts") {
                             openHeartsModal()
                             return
@@ -124,6 +132,8 @@ const Quiz = ({
                         setStatus("correct");
                         setPercentage(prev => prev + 100 / challenges.length);
 
+                        console.log(1)
+
                         if (initialPercentage === 100) {
                             setHearts(prev => Math.min(prev + 1, 5))
                         }
@@ -132,7 +142,7 @@ const Quiz = ({
             })
         } else {
             startTransition(() => {
-                reduceHearts(challenge.id)
+                reduceHearts(challenge._id)
                     .then((respone) => {
                         if (respone?.error === "hearts") {
                             openHeartsModal()
@@ -141,6 +151,8 @@ const Quiz = ({
 
                         incorrectControls.play()
                         setStatus("wrong");
+
+                        console.log(1)
 
                         if (!respone?.error) {
                             setHearts((prev) => Math.max(prev - 1, 0))
@@ -201,6 +213,7 @@ const Quiz = ({
     }    
 
     const title = challenge.type === "ASSIST" ? "Select the correct meaning" : challenge.question
+
 
     return (
         <>

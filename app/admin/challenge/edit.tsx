@@ -1,4 +1,4 @@
-import { Create, Edit, NumberInput, ReferenceField, SelectInput, SimpleForm, TextInput, required } from "react-admin"
+import { Create, Edit, NumberInput, ReferenceField, ReferenceInput, SelectInput, SimpleForm, TextInput, required } from "react-admin"
 
 
 export const ChallengeEdit = () => {
@@ -20,8 +20,8 @@ export const ChallengeEdit = () => {
                     ]}
                     validate={[required()]}
                 />
-                <ReferenceField source="lessonId" reference="lessons" />
-                <NumberInput source="order" validate={[required()]} label="Order" />
+                <ReferenceInput source="activeLesson" reference="lessons" />
+                <NumberInput min={1} source="order" validate={[required()]} label="Order" />
             </SimpleForm>
         </Edit>
     )

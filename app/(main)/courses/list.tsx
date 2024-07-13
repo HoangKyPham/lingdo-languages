@@ -2,24 +2,25 @@
 
 import { upsertUserProgress } from '@/actions/user-progress';
 import { Card } from '@/app/(main)/courses/card';
-import { courses, userProgress } from '@/db/schema'
+import { Course, ActiveCourse } from '@/db/interfaces'
 import { useRouter } from 'next/navigation';
 import React, { useTransition } from 'react'
 import { toast } from 'sonner';
 
 type Props = {
-    courses: typeof courses.$inferSelect[];
-    activeCourseId?: typeof userProgress.$inferSelect.activeCourseId;
+    courses: Course[];
+    activeCourse?: ActiveCourse;
 }
 
-const List = ({ courses, activeCourseId }: Props) => {
+const List = ({ courses, activeCourse }: Props) => {
     const router = useRouter();
     const [pending, startTransition] = useTransition();
 
-    const onClick = (id: number) => {
+
+    const onClick = (id : string) => {
         if (pending) return;
 
-        if (id === activeCourseId) {
+        if (id === activeCourse?._id) {
             return router.push("/learn")
         }
 
@@ -32,15 +33,15 @@ const List = ({ courses, activeCourseId }: Props) => {
 
     return (
         <div className="pt-6 grid grid-cols-2 lg:grid-cols-[repeat(auto-fill, minmax(210px,1fr))] gap-4">
-            {courses.map(course => (
+            {courses.map((course) => (
                 <Card
-                    key={course.id}
-                    id={course.id}
+                    key={course._id}
+                    id={course._id || ""}
                     title={course.title}
                     imageSrc={course.imageSrc}
                     onClick={onClick}
                     disabled={pending}
-                    active={course.id === activeCourseId}
+                    active={course._id === activeCourse?._id}
                 />
             ))}
         </div>

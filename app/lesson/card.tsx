@@ -1,4 +1,4 @@
-import { challenges } from '@/db/schema';
+import { challenges } from '@/db/interfaces';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import React, { useCallback } from 'react'

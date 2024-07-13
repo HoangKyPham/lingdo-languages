@@ -1,10 +1,9 @@
-"user server";
+"use server"
 
 import { getUserSubscription } from "@/db/queries";
 import { absoluteUrl } from "@/lib/utils";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
-import { stripe } from "@/lib/stripe"
 
 const returnUrl = absoluteUrl("/shop")
 
@@ -18,42 +17,22 @@ export const createStripeUrl = async () => {
 
     const userSubscription = await getUserSubscription();
 
-    if (userSubscription && userSubscription.stripeCustomerId) {
-        const stripeSession = await stripe.billingPortal.sessions.create({
-            customer : userSubscription.stripeCustomerId,
-            return_url: returnUrl
-        });
+    // if (userSubscription && userSubscription.stripeCustomerId) {
+    //     const stripeSession = await stripe.billingPortal.sessions.create({
+    //         customer : userSubscription.stripeCustomerId,
+    //         return_url: returnUrl
+    //     });
 
-        return {data : stripeSession.url}
-    }
+    //     return {data : stripeSession.url}
+    // }
 
-    const stripeSession = await stripe.checkout.sessions.create({
-        mode : "subscription",
-        payment_method_types: ["card"],
-        customer_email : user.emailAddresses[0].emailAddress,
-        line_items: [
-            {
-                quantity:1,
-                price_data : {
-                    currency: "USD",
-                    product_data : {
-                        name : "Lingdo Pro",
-                        description : "Unlimited Hearts"
-                    },
-                    unit_amount : 2000,
-                    recurring : {
-                        interval : "month"
-                    }
-                }
-            }
-        ],
-        metadata : {
-            userId
-        },
-        success_url : returnUrl,
-        cancel_url : returnUrl
-    });
+    const vnPaySession = await fetch(`http://localhost:8080/api/v1/create-payment-url`, {
+        method : "GET",
+        headers : {
+            "Content-Type": "application/json"
+        }
+    })
 
-    return {data: stripeSession.url}
+    return {data: vnPaySession.url}
 }
 

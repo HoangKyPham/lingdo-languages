@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { quests } from '@/constants'
-import { userProgress } from '@/db/schema'
+import { userProgress } from '@/db/interfaces'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'

@@ -8,7 +8,7 @@ type Props = {
 }
 
 const ResultCard = ({ value, variant }: Props) => {
-    const imageSrc = variant === "hearts" ? "/heart.svg" : "/points.svg"
+    const imageSrc = variant === "hearts" ? "/hearts.svg" : "/points.svg"
 
     return (
         <div

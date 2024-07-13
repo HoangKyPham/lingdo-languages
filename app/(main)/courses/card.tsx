@@ -5,9 +5,9 @@ import React from 'react'
 
 type Props = {
     title : string,
-    id: number,
+    id: string,
     imageSrc : string,
-    onClick : (id : number) => void,
+    onClick : (id : string) => void,
     disabled ?: boolean,
     active ?: boolean
 

@@ -12,55 +12,56 @@ import { CourseList } from '@/app/admin/course/list'
 import { LessonCreate } from '@/app/admin/lesson/create'
 import { LessonEdit } from '@/app/admin/lesson/edit'
 import { LessonList } from '@/app/admin/lesson/list'
+import { dataProvider } from '@/app/admin/provider'
 import { UnitCreate } from '@/app/admin/unit/create'
 import { UnitEdit } from '@/app/admin/unit/edit'
 import { UnitList } from '@/app/admin/unit/list'
-import simpleRestProvider from "ra-data-simple-rest"
+import restProvider  from "ra-data-simple-rest"
 import { Admin, Resource } from "react-admin"
 
-const dataProvider = simpleRestProvider("/admin")
 
 const App = () => {
-  return (
-    <Admin dataProvider={dataProvider}>
-        <Resource
-            name='courses'
-            list={CourseList}
-            create={CourseCreate}
-            edit={CourseEdit}
-            recordRepresentation="title"
-        />
-        <Resource
-            name='units'
-            list={UnitList}
-            create={UnitCreate}
-            edit={UnitEdit}
-            recordRepresentation="title"
-        />
-        <Resource
-            name='lessons'
-            list={LessonList}
-            create={LessonCreate}
-            edit={LessonEdit}
-            recordRepresentation="title"
-        />
-        <Resource
-            name='challenges'
-            list={ChallengeList}
-            create={ChallengeCreate}
-            edit={ChallengeEdit}
-            recordRepresentation="question"
-        />
-        <Resource
-            name='challengeOptions'
-            list={ChallengeOptionList}
-            create={ChallengeOptionCreate}
-            edit={ChallengeOptionEdit}
-            recordRepresentation="text"
-            options={{label: 'Challenge Options'}}
-        />
-    </Admin>
-  )
+
+    return (
+        <Admin dataProvider={dataProvider}>
+             <Resource
+                name='courses'
+                list={CourseList}
+                create={CourseCreate}
+                edit={CourseEdit}
+                recordRepresentation="title"
+            />
+            <Resource
+                name='units'
+                list={UnitList}
+                create={UnitCreate}
+                edit={UnitEdit}
+                recordRepresentation="title"
+            />
+            <Resource
+                name='lessons'
+                list={LessonList}
+                create={LessonCreate}
+                edit={LessonEdit}
+                recordRepresentation="title"
+            />
+            <Resource
+                name='challenges'
+                list={ChallengeList}
+                create={ChallengeCreate}
+                edit={ChallengeEdit}
+                recordRepresentation="question"
+            />
+            <Resource
+                name='challenge-option'
+                list={ChallengeOptionList}
+                create={ChallengeOptionCreate}
+                edit={ChallengeOptionEdit}
+                recordRepresentation="text"
+                options={{ label: 'Challenge Options' }}
+            />
+        </Admin>
+    )
 }
 
 export default App

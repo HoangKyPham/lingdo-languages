@@ -28,9 +28,9 @@ const LessonIdPage = async ({params} : Props) => {
 
   return (
     <Quiz
-        initialLessonId={lesson.id}
+        initialLessonId={lesson.lesson._id}
         initialLessonChallenges={lesson.challenges}
-        initialHearts={userProgress.hearts}
+        initialHearts={userProgress.user.hearts}
         initialPercentage={initialPercentage}
         userSubscription={userSubsccription}
     />
